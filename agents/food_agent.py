@@ -45,44 +45,68 @@ class FoodAgent(BaseAgent):
         preferences_text = ", ".join([pref.value for pref in request.travel_preferences])
         
         prompt = f"""
-        You are an expert food and dining guide. Find the best restaurants, cafes, and food spots for a 2-day weekend trip to {request.destination}.
+        You are an expert food and dining guide with deep local knowledge of {request.destination}. Create a comprehensive culinary guide for a 2-day weekend trip.
         
         Travel Preferences: {preferences_text}
         Budget Category: {request.budget_category.value}
         Group Size: {request.group_size}
+        Special Requirements: {request.special_requirements or 'None'}
+        
+        IMPORTANT: Provide REAL, CURRENT information. Research actual restaurants, their current menus, prices, and operating hours.
         
         For each restaurant/food spot, provide:
-        1. Name and cuisine type
-        2. Price range ($, $$, $$$, $$$$)
-        3. Rating (0-5 stars)
-        4. Location/address
-        5. Specialties (3-5 signature dishes)
-        6. Opening hours
-        7. Estimated cost per person in USD
-        8. Must-try dishes (2-3 dishes)
-        9. Fun food tips or local insights
+        1. Name and detailed cuisine type (be specific about regional specialties)
+        2. Price range ($, $$, $$$, $$$$) with actual price examples
+        3. Rating (0-5 stars) based on recent reviews
+        4. Exact location/address with neighborhood
+        5. Specialties (5-7 signature dishes with descriptions)
+        6. Current opening hours (check for seasonal changes)
+        7. Accurate estimated cost per person in USD
+        8. Must-try dishes (3-4 dishes with brief descriptions)
+        9. Fun food tips, local insights, and cultural context
+        10. Reservation requirements (walk-in, reservations needed, etc.)
+        11. Dietary accommodations (vegetarian, vegan, gluten-free options)
+        12. Best time to visit (avoid crowds, get best service)
+        13. Local food culture insights
+        14. Nearby attractions for efficient routing
         
-        Return a JSON array with 8-12 restaurants that would be suitable for a 2-day trip.
-        Include a mix of:
+        Return a JSON array with 12-15 restaurants that would be suitable for a 2-day trip.
+        Include a diverse mix of:
+        - Traditional local restaurants (authentic regional cuisine)
+        - Modern/contemporary dining
+        - Street food and local markets
         - Breakfast/brunch spots
-        - Lunch restaurants
-        - Dinner restaurants
-        - Street food or local markets
-        - Cafes or dessert places
+        - Coffee shops and cafes
+        - Dessert and sweet spots
+        - Budget-friendly options
+        - Splurge-worthy experiences
+        
+        Prioritize restaurants that:
+        - Offer authentic local cuisine and experiences
+        - Match the budget category perfectly
+        - Are highly rated by locals and tourists
+        - Provide unique dining experiences
+        - Are accessible and convenient for tourists
+        - Offer good value for money
         
         Format:
         [
             {{
                 "name": "Restaurant Name",
-                "cuisine_type": "Italian, Local, etc.",
+                "cuisine_type": "Specific regional cuisine (e.g., 'Traditional Neapolitan Pizza', 'Authentic Sichuan')",
                 "price_range": "$$",
                 "rating": 4.5,
-                "location": "Address or area",
-                "specialties": ["Dish 1", "Dish 2", "Dish 3"],
-                "opening_hours": "Hours of operation",
+                "location": "Exact address with neighborhood",
+                "specialties": ["Dish 1 with description", "Dish 2 with description", "Dish 3 with description"],
+                "opening_hours": "Current hours of operation",
                 "estimated_cost_per_person": 35.0,
-                "must_try_dishes": ["Signature dish 1", "Signature dish 2"],
-                "fun_tips": ["Local tip 1", "Local tip 2"]
+                "must_try_dishes": ["Signature dish 1 with brief description", "Signature dish 2 with brief description"],
+                "fun_tips": ["Local tip 1", "Cultural insight 2", "Dining etiquette tip 3"],
+                "reservation_required": false,
+                "dietary_accommodations": ["vegetarian", "vegan options"],
+                "best_time_to_visit": "lunch",
+                "local_insights": "Cultural context and local dining traditions",
+                "nearby_attractions": ["Attraction 1", "Attraction 2"]
             }}
         ]
         """

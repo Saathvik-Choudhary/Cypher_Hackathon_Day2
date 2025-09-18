@@ -41,37 +41,61 @@ class ExplorerAgent(BaseAgent):
         preferences_text = ", ".join([pref.value for pref in request.travel_preferences])
         
         prompt = f"""
-        You are an expert travel explorer. Find the top attractions and activities for a 2-day weekend trip to {request.destination}.
+        You are an expert travel explorer with deep local knowledge. Create a comprehensive list of top attractions and activities for a 2-day weekend trip to {request.destination}.
         
         Travel Preferences: {preferences_text}
         Budget Category: {request.budget_category.value}
         Group Size: {request.group_size}
+        Special Requirements: {request.special_requirements or 'None'}
+        
+        IMPORTANT: Provide REAL, CURRENT information. Research actual attractions, their current operating hours, and accurate pricing.
         
         For each attraction, provide:
-        1. Name and description
-        2. Location/address
-        3. Opening hours (if applicable)
-        4. Entry fee in USD (estimate if unknown)
-        5. Estimated duration in minutes
-        6. Popularity score (0-10)
-        7. Uniqueness score (0-10)
-        8. Category (museum, park, landmark, activity, etc.)
+        1. Name and detailed description (what makes it special, historical significance, unique features)
+        2. Exact location/address with neighborhood
+        3. Current opening hours (check if it's seasonal or has special hours)
+        4. Accurate entry fee in USD (include any discounts for students/seniors)
+        5. Realistic duration in minutes (including time for photos, rest, etc.)
+        6. Travel time from city center in minutes
+        7. Popularity score (0-10) based on visitor numbers and reviews
+        8. Uniqueness score (0-10) based on how unique/iconic it is
+        9. Category (museum, park, landmark, activity, cultural_site, etc.)
+        10. Best time to visit (morning, afternoon, evening)
+        11. Photography opportunities (yes/no)
+        12. Accessibility notes
+        13. Nearby attractions for efficient routing
         
-        Return a JSON array with at least 8-12 attractions that would be suitable for a 2-day trip.
-        Focus on attractions that match the travel preferences and are appropriate for the budget category.
+        Return a JSON array with 12-15 attractions that would be suitable for a 2-day trip.
+        Include a mix of:
+        - Must-see iconic attractions
+        - Hidden gems and local favorites
+        - Free/low-cost options for budget travelers
+        - Indoor/outdoor variety for weather flexibility
+        - Different types of experiences (cultural, recreational, scenic)
+        
+        Prioritize attractions that:
+        - Match the travel preferences exactly
+        - Are appropriate for the budget category
+        - Can be efficiently visited in 2 days
+        - Offer unique experiences not available elsewhere
         
         Format:
         [
             {{
                 "name": "Attraction Name",
-                "description": "Brief description of what makes this attraction special",
-                "location": "Address or area",
-                "opening_hours": "Hours of operation",
+                "description": "Detailed description highlighting what makes this attraction special, its history, and unique features",
+                "location": "Exact address with neighborhood",
+                "opening_hours": "Current hours of operation (check for seasonal changes)",
                 "entry_fee": 25.0,
                 "estimated_duration": 120,
+                "travel_time_from_center": 15,
                 "popularity_score": 8.5,
                 "uniqueness_score": 7.0,
-                "category": "museum"
+                "category": "museum",
+                "best_time_to_visit": "morning",
+                "photography_opportunities": true,
+                "accessibility_notes": "Wheelchair accessible",
+                "nearby_attractions": ["Attraction 2", "Attraction 3"]
             }}
         ]
         """

@@ -79,6 +79,8 @@ class TravelItinerary(BaseModel):
     budget_utilization_percentage: float
     recommendations: List[str]
     emergency_contacts: List[str]
+    weather_forecast: Optional[List[Dict[str, Any]]] = []
+    external_data: Optional[Dict[str, Any]] = {}
     created_at: datetime = Field(default_factory=datetime.now)
 
 class AgentResponse(BaseModel):

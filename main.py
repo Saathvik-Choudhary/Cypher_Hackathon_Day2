@@ -12,6 +12,7 @@ import os
 from models import TravelRequest, TravelItinerary, TravelPreference, BudgetCategory
 from orchestrator import TravelBuddyOrchestrator
 from config import Config
+from services.cache import cache_service
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -106,11 +107,24 @@ async def create_itinerary(request: CreateItineraryRequest):
             special_requirements=request.special_requirements
         )
         
+        # Generate cache key
+        cache_key = f"itinerary_{travel_request.destination}_{travel_request.budget}_{travel_request.budget_category.value}_{travel_request.start_date}_{travel_request.group_size}"
+        
+        # Try to get from cache first
+        cached_itinerary = await cache_service.get(cache_key)
+        if cached_itinerary:
+            processing_time = (datetime.now() - start_time).total_seconds()
+            return ItineraryResponse(
+                success=True,
+                itinerary=TravelItinerary(**cached_itinerary),
+                processing_time=processing_time
+            )
+        
         # Create itinerary using orchestrator
         itinerary = await orchestrator.create_itinerary(travel_request)
         
-        # Cache the result
-        cache_key = f"{request.destination}_{request.budget}_{request.budget_category}_{request.start_date}"
+        # Cache the result (both in memory and Redis)
+        await cache_service.set(cache_key, itinerary.dict(), ttl=3600)  # 1 hour cache
         itinerary_cache[cache_key] = itinerary
         
         processing_time = (datetime.now() - start_time).total_seconds()
@@ -198,6 +212,65 @@ async def get_budget_categories():
             {"value": "luxury", "label": "Luxury ($300+ per day)", "range": "$300+"}
         ]
     }
+
+@app.post("/api/optimize-itinerary")
+async def optimize_itinerary(request: CreateItineraryRequest):
+    """Optimize an existing itinerary with real-time data"""
+    
+    start_time = datetime.now()
+    
+    try:
+        # Validate and convert request
+        travel_request = TravelRequest(
+            destination=request.destination,
+            budget=request.budget,
+            budget_category=BudgetCategory(request.budget_category),
+            travel_preferences=[TravelPreference(pref) for pref in request.travel_preferences],
+            start_date=request.start_date,
+            group_size=request.group_size,
+            special_requirements=request.special_requirements
+        )
+        
+        # Create optimized itinerary
+        itinerary = await orchestrator.create_itinerary(travel_request)
+        
+        processing_time = (datetime.now() - start_time).total_seconds()
+        
+        return ItineraryResponse(
+            success=True,
+            itinerary=itinerary,
+            processing_time=processing_time
+        )
+        
+    except Exception as e:
+        processing_time = (datetime.now() - start_time).total_seconds()
+        return ItineraryResponse(
+            success=False,
+            error_message=f"Failed to optimize itinerary: {str(e)}",
+            processing_time=processing_time
+        )
+
+@app.get("/api/cache/stats")
+async def get_cache_stats():
+    """Get cache statistics"""
+    try:
+        if hasattr(cache_service, 'redis_client') and cache_service.redis_client:
+            info = cache_service.redis_client.info()
+            return {
+                "cache_type": "Redis",
+                "connected_clients": info.get('connected_clients', 0),
+                "used_memory": info.get('used_memory_human', '0B'),
+                "keyspace_hits": info.get('keyspace_hits', 0),
+                "keyspace_misses": info.get('keyspace_misses', 0)
+            }
+        else:
+            return {
+                "cache_type": "Memory",
+                "cached_items": len(cache_service.memory_cache),
+                "status": "active"
+            }
+    except Exception as e:
+        return {"error": str(e)}
 
 # Mount static files for React build
 try:

@@ -4,6 +4,7 @@ from typing import Dict, Any, List
 from datetime import datetime, timedelta
 from models import TravelRequest, TravelItinerary, DayPlan, BudgetBreakdown
 from agents import ExplorerAgent, BudgetAgent, FoodAgent
+from services.external_apis import ExternalAPIService
 
 class TravelBuddyOrchestrator:
     def __init__(self):
@@ -17,22 +18,26 @@ class TravelBuddyOrchestrator:
         start_time = time.time()
         print(f"🚀 Starting itinerary creation for {request.destination}")
         
-        # Phase 1: Parallel agent processing
-        print("📋 Phase 1: Gathering information from all agents...")
-        agent_results = await self._run_agents_parallel(request)
+        # Phase 0: Gather real-time data
+        print("🌐 Phase 0: Gathering real-time data...")
+        external_data = await self._gather_external_data(request)
         
-        # Phase 2: Integrate results and create day plans
+        # Phase 1: Parallel agent processing with external data
+        print("📋 Phase 1: Gathering information from all agents...")
+        agent_results = await self._run_agents_parallel(request, external_data)
+        
+        # Phase 2: Integrate results and create optimized day plans
         print("🗓️ Phase 2: Creating optimized day plans...")
-        day_plans = await self._create_day_plans(agent_results, request)
+        day_plans = await self._create_day_plans(agent_results, request, external_data)
         
         # Phase 3: Final budget reconciliation
         print("💰 Phase 3: Finalizing budget and recommendations...")
         final_budget = await self._reconcile_budget(agent_results, day_plans, request)
         
-        # Phase 4: Create final itinerary
+        # Phase 4: Create final itinerary with enhanced data
         print("✨ Phase 4: Assembling final itinerary...")
         itinerary = await self._assemble_itinerary(
-            request, agent_results, day_plans, final_budget
+            request, agent_results, day_plans, final_budget, external_data
         )
         
         total_time = time.time() - start_time
@@ -40,7 +45,36 @@ class TravelBuddyOrchestrator:
         
         return itinerary
     
-    async def _run_agents_parallel(self, request: TravelRequest) -> Dict[str, Any]:
+    async def _gather_external_data(self, request: TravelRequest) -> Dict[str, Any]:
+        """Gather real-time data from external APIs"""
+        external_data = {}
+        
+        try:
+            async with ExternalAPIService() as api_service:
+                # Gather weather, places, and transportation data in parallel
+                tasks = [
+                    api_service.get_weather_forecast(request.destination, request.start_date),
+                    api_service.get_places_info(request.destination, "tourist_attraction"),
+                    api_service.get_places_info(request.destination, "restaurant")
+                ]
+                
+                results = await asyncio.gather(*tasks, return_exceptions=True)
+                
+                external_data['weather'] = results[0] if not isinstance(results[0], Exception) else {}
+                external_data['attractions'] = results[1] if not isinstance(results[1], Exception) else []
+                external_data['restaurants'] = results[2] if not isinstance(results[2], Exception) else []
+                
+        except Exception as e:
+            print(f"External API error: {e}")
+            external_data = {
+                'weather': {},
+                'attractions': [],
+                'restaurants': []
+            }
+        
+        return external_data
+    
+    async def _run_agents_parallel(self, request: TravelRequest, external_data: Dict[str, Any] = None) -> Dict[str, Any]:
         """Run all agents in parallel for maximum efficiency"""
         
         # Start all agents simultaneously
@@ -73,7 +107,7 @@ class TravelBuddyOrchestrator:
         
         return agent_results
     
-    async def _create_day_plans(self, agent_results: Dict[str, Any], request: TravelRequest) -> List[DayPlan]:
+    async def _create_day_plans(self, agent_results: Dict[str, Any], request: TravelRequest, external_data: Dict[str, Any] = None) -> List[DayPlan]:
         """Create optimized day plans from agent results"""
         
         day_plans = []
@@ -203,7 +237,7 @@ class TravelBuddyOrchestrator:
         return budget_breakdown
     
     async def _assemble_itinerary(self, request: TravelRequest, agent_results: Dict[str, Any],
-                                day_plans: List[DayPlan], budget_breakdown: BudgetBreakdown) -> TravelItinerary:
+                                day_plans: List[DayPlan], budget_breakdown: BudgetBreakdown, external_data: Dict[str, Any] = None) -> TravelItinerary:
         """Assemble the final travel itinerary"""
         
         # Calculate total estimated cost
@@ -228,6 +262,11 @@ class TravelBuddyOrchestrator:
             food_recs = agent_results["food"]["data"].get("food_recommendations", [])
             all_recommendations.extend(food_recs)
         
+        # Add weather-based recommendations
+        if external_data and external_data.get('weather'):
+            weather_recs = external_data['weather'].get('recommendations', [])
+            all_recommendations.extend(weather_recs)
+        
         # Add emergency contacts
         emergency_contacts = [
             "Local Emergency: 911 (or local emergency number)",
@@ -235,6 +274,9 @@ class TravelBuddyOrchestrator:
             "Your accommodation front desk",
             "Local embassy/consulate (if international travel)"
         ]
+        
+        # Add weather information to the itinerary
+        weather_info = external_data.get('weather', {}) if external_data else {}
         
         return TravelItinerary(
             destination=request.destination,
@@ -244,5 +286,7 @@ class TravelBuddyOrchestrator:
             total_estimated_cost=total_estimated_cost,
             budget_utilization_percentage=budget_utilization,
             recommendations=all_recommendations,
-            emergency_contacts=emergency_contacts
+            emergency_contacts=emergency_contacts,
+            weather_forecast=weather_info.get('forecasts', []),
+            external_data=external_data or {}
         )

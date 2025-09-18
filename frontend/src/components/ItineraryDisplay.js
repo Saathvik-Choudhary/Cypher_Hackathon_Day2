@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import DayPlan from './DayPlan';
 import BudgetBreakdown from './BudgetBreakdown';
+import WeatherForecast from './WeatherForecast';
 
 const ItineraryDisplay = ({ itinerary, onReset }) => {
   const formatDate = (dateString) => {
@@ -52,47 +53,54 @@ const ItineraryDisplay = ({ itinerary, onReset }) => {
         </p>
       </div>
 
-      {/* Budget Summary */}
+      {/* Budget Summary and Weather */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <BudgetBreakdown budgetBreakdown={itinerary.budget_breakdown} />
         </div>
         
-        <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <DollarSign className="h-5 w-5 mr-2 text-green-600" />
-            Budget Summary
-          </h3>
-          <div className="space-y-3">
-            <div className="flex justify-between">
-              <span className="text-gray-600">Total Budget:</span>
-              <span className="font-medium">{formatCurrency(itinerary.total_budget)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Estimated Cost:</span>
-              <span className="font-medium">{formatCurrency(itinerary.total_estimated_cost)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Remaining:</span>
-              <span className="font-medium text-green-600">
-                {formatCurrency(itinerary.total_budget - itinerary.total_estimated_cost)}
-              </span>
-            </div>
-            <div className="pt-2 border-t">
+        <div className="space-y-6">
+          <div className="card">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <DollarSign className="h-5 w-5 mr-2 text-green-600" />
+              Budget Summary
+            </h3>
+            <div className="space-y-3">
               <div className="flex justify-between">
-                <span className="text-gray-600">Budget Used:</span>
-                <span className="font-medium">
-                  {itinerary.budget_utilization_percentage.toFixed(1)}%
+                <span className="text-gray-600">Total Budget:</span>
+                <span className="font-medium">{formatCurrency(itinerary.total_budget)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Estimated Cost:</span>
+                <span className="font-medium">{formatCurrency(itinerary.total_estimated_cost)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Remaining:</span>
+                <span className="font-medium text-green-600">
+                  {formatCurrency(itinerary.total_budget - itinerary.total_estimated_cost)}
                 </span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                <div 
-                  className="bg-primary-600 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${Math.min(itinerary.budget_utilization_percentage, 100)}%` }}
-                ></div>
+              <div className="pt-2 border-t">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Budget Used:</span>
+                  <span className="font-medium">
+                    {itinerary.budget_utilization_percentage.toFixed(1)}%
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                  <div 
+                    className="bg-primary-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${Math.min(itinerary.budget_utilization_percentage, 100)}%` }}
+                  ></div>
+                </div>
               </div>
             </div>
           </div>
+          
+          {/* Weather Forecast */}
+          {itinerary.weather_forecast && itinerary.weather_forecast.length > 0 && (
+            <WeatherForecast weatherForecast={itinerary.weather_forecast} />
+          )}
         </div>
       </div>
 

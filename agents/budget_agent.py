@@ -101,39 +101,74 @@ class BudgetAgent(BaseAgent):
         return activity_costs
     
     async def _generate_budget_recommendations(self, budget_breakdown: BudgetBreakdown, request: TravelRequest) -> List[str]:
-        """Generate budget-specific recommendations"""
+        """Generate sophisticated budget-specific recommendations"""
         
         recommendations = []
         
         # Budget category specific recommendations
         if request.budget_category.value == "budget":
             recommendations.extend([
-                "Consider staying in hostels or budget hotels to maximize your accommodation budget",
-                "Look for free walking tours and free museum days",
-                "Eat at local markets and street food for authentic and affordable meals",
-                "Use public transportation or walk between attractions"
+                "🏨 Accommodation: Consider hostels, budget hotels, or Airbnb to maximize your accommodation budget",
+                "🎫 Activities: Look for free walking tours, free museum days, and city passes for multiple attractions",
+                "🍽️ Food: Eat at local markets, street food, and casual restaurants for authentic and affordable meals",
+                "🚌 Transportation: Use public transportation, walking, or bike rentals between attractions",
+                "💰 Money-saving tips: Book activities in advance for discounts, look for student/senior discounts",
+                "📱 Apps: Use local apps for deals on food and activities",
+                "🕐 Timing: Visit popular attractions during off-peak hours to avoid crowds and higher prices"
             ])
         elif request.budget_category.value == "moderate":
             recommendations.extend([
-                "Mix of mid-range hotels and unique accommodations",
-                "Balance between restaurants and local food experiences",
-                "Consider combo tickets for multiple attractions",
-                "Use a mix of public transport and occasional taxis"
+                "🏨 Accommodation: Mix of mid-range hotels, boutique accommodations, and unique stays",
+                "🍽️ Food: Balance between restaurants and local food experiences, try local specialties",
+                "🎫 Activities: Consider combo tickets for multiple attractions, book guided tours for key sites",
+                "🚌 Transportation: Use a mix of public transport and occasional taxis/rideshare",
+                "💳 Payment: Use credit cards with travel rewards, consider travel insurance",
+                "📅 Planning: Book popular restaurants and activities in advance",
+                "🎯 Focus: Prioritize must-see attractions and unique local experiences"
             ])
         else:  # luxury
             recommendations.extend([
-                "Stay at premium hotels or unique boutique accommodations",
-                "Dine at top-rated restaurants and try local specialties",
-                "Book private tours and premium experiences",
-                "Use private transportation or premium car services"
+                "🏨 Accommodation: Stay at premium hotels, luxury resorts, or unique boutique accommodations",
+                "🍽️ Food: Dine at top-rated restaurants, try local specialties at fine dining establishments",
+                "🎫 Activities: Book private tours, premium experiences, and exclusive access",
+                "🚌 Transportation: Use private transportation, premium car services, or chauffeur services",
+                "💎 Experiences: Consider wine tastings, spa treatments, and exclusive cultural experiences",
+                "📞 Concierge: Use hotel concierge services for reservations and recommendations",
+                "🎭 Entertainment: Book tickets for shows, concerts, or cultural performances"
             ])
         
-        # General recommendations
-        if budget_breakdown.activities > budget_breakdown.total_budget * 0.3:
-            recommendations.append("Consider reducing activity costs to balance your budget")
+        # Advanced budget optimization recommendations
+        budget_utilization = (budget_breakdown.activities + budget_breakdown.food + budget_breakdown.accommodation) / budget_breakdown.total_budget
         
-        if budget_breakdown.food < budget_breakdown.total_budget * 0.2:
-            recommendations.append("You might want to allocate more budget for food experiences")
+        if budget_utilization > 0.9:
+            recommendations.append("⚠️ Your budget is highly utilized - consider adding a 10-15% buffer for unexpected expenses")
+        elif budget_utilization < 0.7:
+            recommendations.append("💡 You have room in your budget - consider upgrading some experiences or adding more activities")
+        
+        # Category-specific optimization
+        if budget_breakdown.activities > budget_breakdown.total_budget * 0.4:
+            recommendations.append("🎯 Consider reducing activity costs to balance your budget across all categories")
+        
+        if budget_breakdown.food < budget_breakdown.total_budget * 0.15:
+            recommendations.append("🍽️ You might want to allocate more budget for food experiences - local cuisine is a key part of travel")
+        
+        if budget_breakdown.accommodation > budget_breakdown.total_budget * 0.6:
+            recommendations.append("🏨 Consider reducing accommodation costs to free up budget for activities and dining")
+        
+        # Group size specific recommendations
+        if request.group_size > 4:
+            recommendations.extend([
+                "👥 Group discounts: Look for group rates on accommodations, activities, and transportation",
+                "🍽️ Dining: Consider family-style dining or sharing dishes to try more variety",
+                "🚌 Transportation: Consider group transportation options for better value"
+            ])
+        
+        # Destination-specific recommendations
+        if "culture" in [pref.value for pref in request.travel_preferences]:
+            recommendations.append("🏛️ Cultural sites often have free or discounted entry on certain days - check local schedules")
+        
+        if "food" in [pref.value for pref in request.travel_preferences]:
+            recommendations.append("🍴 Food tours and cooking classes offer great value for experiencing local cuisine")
         
         return recommendations
     
